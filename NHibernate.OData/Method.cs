@@ -47,6 +47,11 @@ namespace NHibernate.OData
             { MethodType.Trim, TrimMethod },
             { MethodType.SubString, SubStringMethod },
             { MethodType.SubStringOf, SubStringOfMethod },
+
+            /**
+              * 01.06.2020: method type Contains added; supported in OData V4
+             */
+            { MethodType.Contains, SubStringOfMethod },
             { MethodType.Concat, ConcatMethod },
             { MethodType.Length, LengthMethod },
             { MethodType.Year, YearMethod },

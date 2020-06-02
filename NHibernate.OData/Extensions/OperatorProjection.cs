@@ -37,7 +37,10 @@ namespace NHibernate.OData.Extensions
             this.args = args;
         }
 
-        public override SqlString ToSqlString(ICriteria criteria, int position, ICriteriaQuery criteriaQuery, IDictionary<string, IFilter> enabledFilters)
+        /**
+         * 01.06.2020: Parameter enabledFilters removed
+         */
+        public override SqlString ToSqlString(ICriteria criteria, int position, ICriteriaQuery criteriaQuery/*, IDictionary<string, IFilter> enabledFilters*/)
         {
             SqlStringBuilder sb = new SqlStringBuilder();
             sb.Add("(");
@@ -45,7 +48,10 @@ namespace NHibernate.OData.Extensions
             for (int i = 0; i < args.Length; i++)
             {
                 int loc = (position + 1) * 1000 + i;
-                SqlString projectArg = GetProjectionArgument(criteriaQuery, criteria, args[i], loc, enabledFilters);
+                /**
+                 * 01.06.2020: Parameter enabledFilters removed
+                 */
+                SqlString projectArg = GetProjectionArgument(criteriaQuery, criteria, args[i], loc/*, enabledFilters*/);
                 sb.Add(projectArg);
 
                 if (i < args.Length - 1)
@@ -57,11 +63,17 @@ namespace NHibernate.OData.Extensions
             return sb.ToSqlString();
         }
 
+        /**
+         * 01.06.2020: Parameter enabledFilters removed
+         */
         private static SqlString GetProjectionArgument(ICriteriaQuery criteriaQuery, ICriteria criteria,
-                                                       IProjection projection, int loc,
-                                                       IDictionary<string, IFilter> enabledFilters)
+                                                       IProjection projection, int loc/*,
+                                                       IDictionary<string, IFilter> enabledFilters*/)
         {
-            SqlString sql = projection.ToSqlString(criteria, loc, criteriaQuery, enabledFilters);
+            /**
+             * 01.06.2020: Parameter enabledFilters removed
+             */
+            SqlString sql = projection.ToSqlString(criteria, loc, criteriaQuery/*, enabledFilters*/);
             return sql.Substring(0, sql.LastIndexOfCaseInsensitive(" as "));
         }
 
@@ -90,14 +102,20 @@ namespace NHibernate.OData.Extensions
             }
         }
 
-        public override SqlString ToGroupSqlString(ICriteria criteria, ICriteriaQuery criteriaQuery, IDictionary<string, IFilter> enabledFilters)
+        /**
+         * 01.06.2020: Parameter enabledFilters removed
+         */
+        public override SqlString ToGroupSqlString(ICriteria criteria, ICriteriaQuery criteriaQuery/*, IDictionary<string, IFilter> enabledFilters*/)
         {
             SqlStringBuilder buf = new SqlStringBuilder();
             foreach (IProjection projection in args)
             {
                 if (projection.IsGrouped)
                 {
-                    buf.Add(projection.ToGroupSqlString(criteria, criteriaQuery, enabledFilters)).Add(", ");
+                    /**
+                     * 01.06.2020: Parameter enabledFilters removed
+                     */
+                    buf.Add(projection.ToGroupSqlString(criteria, criteriaQuery/*, enabledFilters*/)).Add(", ");
                 }
             }
             if (buf.Count >= 2)

@@ -62,6 +62,15 @@ namespace NHibernate.OData
                 Debug.Assert(members[0].IdExpression == null);
 
                 string resolvedName = ResolveName(mappedClass, string.Empty, members[0].Name, ref type);
+                if (string.IsNullOrEmpty(resolvedName))
+                {
+                    /**
+                     * 01.06.2020: Throwing exception moved from "ResolveName" to here.
+                     */
+                    throw new QueryException(String.Format(
+                        ErrorMessages.Resolve_CannotResolveName, members[0].Name, type)
+                    );
+                }
 
                 return new ResolvedMemberExpression(
                     expression.MemberType,
@@ -71,6 +80,8 @@ namespace NHibernate.OData
             }
 
             var sb = new StringBuilder();
+            var typeIsMapped = false;
+            var baseTypeIsMapped = false;
 
             for (int i = 0; i < members.Count; i++)
             {
@@ -81,14 +92,52 @@ namespace NHibernate.OData
                 bool isLastMember = i == members.Count - 1;
                 string resolvedName = ResolveName(mappedClass, sb.ToString(), member.Name, ref type);
 
+                /**
+                 * 01.06.2020: If the name could not be resolved, then perhaps the type is not mapped? Check whether the type is in our
+                 * dictionary of "base type to inherited mapping" and try it again with the type of the mappec class.
+                 */
+                if (string.IsNullOrEmpty(resolvedName))
+                {
+                    typeIsMapped = _context.SessionFactoryContext.MappedClassMetadata.ContainsKey(type);
+                    baseTypeIsMapped = _context.SessionFactoryContext.BaseClassToMappedClass.ContainsKey(type);
+                    if (!typeIsMapped && baseTypeIsMapped)
+                    {
+                        type = _context.SessionFactoryContext.BaseClassToMappedClass[type];
+                    }
+
+                    resolvedName = ResolveName(mappedClass, sb.ToString(), member.Name, ref type);
+                    if (string.IsNullOrEmpty(resolvedName))
+                    {
+                        throw new QueryException(String.Format(
+                            ErrorMessages.Resolve_CannotResolveName, members[0].Name, type)
+                        );
+                    }
+                }
+
                 if (sb.Length > 0)
                     sb.Append('.');
 
                 sb.Append(resolvedName);
 
-                if (type != null && _context.SessionFactoryContext.MappedClassMetadata.ContainsKey(type) && !isLastMember)
+                /**
+                 * 01.06.2020: If type is not mapped, check whether the type is the base class of a mapped class.
+                 * SessionFactory was extended to hold a dictionary with base type (key) and mapped class type (value). The dictionary will be used
+                 * during building ICriteria if searched type is not mapped, but exists as key in this dictionary. This behavior is required if base
+                 * controller classes are used and model classes are overwritten and the inherited models are mapped. If the base model are queried
+                 * and filtered by name of referenced type, then the OData.nHibernate cannot find the mapping. With the new dictionary the mapping can be found.
+                 */
+                typeIsMapped = _context.SessionFactoryContext.MappedClassMetadata.ContainsKey(type);
+                baseTypeIsMapped = _context.SessionFactoryContext.BaseClassToMappedClass.ContainsKey(type);
+                if (type != null && (typeIsMapped || baseTypeIsMapped) && !isLastMember)
                 {
-                    mappedClass = _context.SessionFactoryContext.MappedClassMetadata[type];
+                    if (typeIsMapped)
+                    {
+                        mappedClass = _context.SessionFactoryContext.MappedClassMetadata[type];
+                    }
+                    else if (baseTypeIsMapped)
+                    {
+                        mappedClass = _context.SessionFactoryContext.MappedClassMetadata[_context.SessionFactoryContext.BaseClassToMappedClass[type]];
+                    }
 
                     string path = (lastAliasName != null ? lastAliasName + "." : null) + sb;
                     Alias alias;
@@ -141,9 +190,10 @@ namespace NHibernate.OData
                 return resolvedName.Name;
             }
 
-            throw new QueryException(String.Format(
-                ErrorMessages.Resolve_CannotResolveName, name, type)
-            );
+            /**
+             * 01.06.2020: Exception removed. If name cannot be resolved, then the calling method can try to resolve the name with the inherited type before throwing the exception. 
+             */
+            return string.Empty;
         }
     }
 }

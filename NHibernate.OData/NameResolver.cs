@@ -20,12 +20,16 @@ namespace NHibernate.OData
         /// <returns>The mapped name and member type or null when the name could not be resolved.</returns>
         public virtual ResolvedName ResolveName(string name, System.Type type, bool caseSensitive)
         {
+
             var bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-            if (!caseSensitive)
-                bindingFlags |= BindingFlags.IgnoreCase;
+            /**
+             * 01.06.2020: In case a property is overwritten with virtual new, then the call type.GetProperty will fail. Therefore we
+             * query a list of properties with this name and check again with declaring type if we found more then one property.
+             */
+            var properties = type.GetProperties(bindingFlags).Where(x => caseSensitive ? x.Name == name : x.Name.ToLower() == name.ToLower());
 
-            var property = type.GetProperty(name, bindingFlags);
+            var property = properties.Count() == 1 ? properties.FirstOrDefault() : properties.FirstOrDefault(x => x.DeclaringType.FullName == type.FullName);
 
             if (property != null)
                 return new ResolvedName(property.PropertyType, property.Name);

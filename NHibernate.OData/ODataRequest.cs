@@ -127,10 +127,16 @@ namespace NHibernate.OData
                     }
                     else if (manyToOneType != null)
                     {
-                        var childEntity = parentPersister.GetPropertyValue(parentEntity, property.Name, EntityMode.Poco);
+                        /**
+                         * 01.06.2020: EntityMode.Poco removed; method GetPropertyValue supports only one parameter
+                         */
+                        var childEntity = parentPersister.GetPropertyValue(parentEntity, property.Name/*, EntityMode.Poco*/);
                         var childPersister = _service.GetPersister(property.Type.ReturnedClass);
 
-                        object idValue = childPersister.GetIdentifier(childEntity, EntityMode.Poco);
+                        /**
+                         * 01.06.2020: EntityMode.Poco removed; method GetIdentifier supports only one parameter
+                         */
+                        object idValue = childPersister.GetIdentifier(childEntity/*, EntityMode.Poco*/);
 
                         criteria.Add(Restrictions.Eq(childPersister.IdentifierPropertyName, idValue));
                     }
@@ -178,7 +184,10 @@ namespace NHibernate.OData
                     ODataService.NsMetadata + "properties"
                 );
 
-                string id = Inflector.Pluralize(entityName) + "(" + LiteralUtil.EscapeValue(persister.GetIdentifier(entity, EntityMode.Poco)) + ")";
+                /**
+                 * 01.06.2020: EntityMode.Poco removed; method GetIdentifier supports only one parameter
+                 */
+                string id = Inflector.Pluralize(entityName) + "(" + LiteralUtil.EscapeValue(persister.GetIdentifier(entity/*, EntityMode.Poco*/)) + ")";
 
                 var entryElement = new XElement(
                     ODataService.NsAtom + "entry",
@@ -194,9 +203,15 @@ namespace NHibernate.OData
 
                 feedElement.Add(entryElement);
 
-                propertiesElement.Add(AddProperty(persister.IdentifierPropertyName, persister.IdentifierType, persister.GetIdentifier(entity, EntityMode.Poco)));
+                /**
+                 * 01.06.2020: EntityMode.Poco removed; method GetIdentifier supports only one parameter
+                 */
+                propertiesElement.Add(AddProperty(persister.IdentifierPropertyName, persister.IdentifierType, persister.GetIdentifier(entity/*, EntityMode.Poco*/)));
 
-                var values = persister.GetPropertyValues(entity, EntityMode.Poco);
+                /**
+                 * 01.06.2020: EntityMode.Poco removed; method GetPropertyValues supports only one parameter
+                 */
+                var values = persister.GetPropertyValues(entity/*, EntityMode.Poco*/);
 
                 for (int i = 0; i < values.Length; i++)
                 {

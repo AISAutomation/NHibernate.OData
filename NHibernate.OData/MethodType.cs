@@ -30,6 +30,11 @@ namespace NHibernate.OData
         Floor,
         Ceiling,
         Any,
-        All
+        All,
+
+        /**
+          * 01.06.2020: method type Contains added; supported in OData V4
+          */
+        Contains
     }
 }
